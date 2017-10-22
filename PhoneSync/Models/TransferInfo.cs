@@ -8,8 +8,8 @@ namespace PhoneSync.Models
 {
     public struct TransferInfo
     {
-        string SourceFile { get; set; }
-        string DestinationFile { get; set; }
-        TransferStatus Status { get; set; }
+        public string SourceFile { get; set; }
+        public string DestinationFile { get; set; }
+        public TransferStatus Status { get; set; }
     }
 }

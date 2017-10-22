@@ -30,6 +30,10 @@ namespace PhoneSync.ViewModels
             Drives.Add("Hey");
             Drives.Add("you");
             Drives.Add("get into my car");
+
+            _explorer.FileScaned += (info) => {
+                _syncContext.Do(info, nfo => DriveItems.Add(nfo));
+            };
         }
 
         /// <summary>
@@ -117,10 +121,10 @@ namespace PhoneSync.ViewModels
         private void DoExplore(object arg)
         {
             IsScanning = true;
+            DriveItems.Clear();
             _explorer.TransferFiles(SelectedDrive).SyncTo(_syncContext, items =>
             {
-                DriveItems.Clear();
-                items.ForEach(x => DriveItems.Add(x));
+                // items.ForEach(x => DriveItems.Add(x));
                 IsScanning = false;
             });
         }

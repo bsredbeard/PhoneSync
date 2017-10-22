@@ -6,11 +6,20 @@ using System.Threading.Tasks;
 using System.Management.Automation;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Configuration;
 
 namespace PhoneSync.Models
 {
     class DeviceExplorer : IDisposable
     {
+        public DeviceExplorer(){
+            var appData = System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var settingsFile = System.IO.Path.Combine(appData, "settings.json");
+            Settings = AppSettings.Load(settingsFile);
+        }
+
+
+
         public async Task<List<string>> GetDrives()
         {
             return await new TaskFactory<List<string>>().StartNew(() =>
@@ -32,9 +41,38 @@ namespace PhoneSync.Models
 
         public async Task<List<TransferInfo>> TransferFiles(string sourceDrive, string destination = null)
         {
-            var result = new List<TransferInfo>();
+            if(string.IsNullOrWhiteSpace(destination)){
+                destination = Settings.DestinationPath;
+            }
 
-            return result;
+            if(sourceDrive != Settings.DeviceName){
+                Settings.DeviceName = sourceDrive;
+            }
+
+            return await new TaskFactory<List<TransferInfo>>().StartNew(() => {
+                var result = new List<TransferInfo>();
+                var script = GetScript("TransferFiles.ps1");
+                var output = new ObservableCollection<string[]>();
+                output.CollectionChanged += (sender, evt) => {
+                    foreach(var x in evt.NewItems){
+                        var item = (string[])x;
+                        var status = (TransferStatus)Enum.Parse(typeof(TransferStatus), item[1]);
+                        var newItem = new TransferInfo(){
+                            SourceFile = item[0],
+                            Status = status,
+                            DestinationFile = item[2]
+                        };
+                        result.Add(newItem);
+                        FileScaned?.Invoke(newItem);
+                    }
+                };
+                using(PowerShell shell = PowerShell.Create()){
+                    shell.AddScript(script);
+                    shell.Invoke(new object[] { sourceDrive, destination, Settings.IgnorePaths.ToArray() }, output);
+                }
+
+                return result;
+            });
         }
 
         private static string GetScript(string scriptName)
@@ -54,6 +92,10 @@ namespace PhoneSync.Models
             throw new Exception("Script name was invalid");
         }
 
+        public event Action<TransferInfo> FileScaned;
+
+        public AppSettings Settings {get; private set;}
+
         public bool IsDisposed { get; private set; }
 
         public void Dispose()
@@ -61,6 +103,7 @@ namespace PhoneSync.Models
             if (!IsDisposed)
             {
                 IsDisposed = true;
+                Settings.Save();
             }
         }
     }

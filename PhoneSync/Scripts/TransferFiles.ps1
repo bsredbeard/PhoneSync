@@ -1,17 +1,18 @@
 ﻿Param(
 	[Parameter(Mandatory=$true)][string]$selectedDrive,
 	[Parameter(Mandatory=$true)][string]$destination,
-	[string]$removePrefix = "\$selectedDrive\Internal shared storage"
+	[string[]]$ignoreList = @()
 )
 
 if(-not($removePrefix)){
 	$removePrefix = "\$selectedDrive\Internal shared storage"
 }
 
-$ignore = @(
-    "\DCIM\.thumbnails\",
-    "\Android\data\"
-)
+$ignore = {$ignoreList}.Invoke()
+if($ignore.Count -lt 1){
+    $ignore.Add("\DCIM\.thumbnails\")
+    $ignore.Add("\Android\data\")
+}
 
 # http://blogs.technet.com/b/heyscriptingguy/archive/2013/04/26/use-powershell-to-work-with-windows-explorer.aspx
 $shell = New-Object -com Shell.Application
@@ -47,8 +48,13 @@ Function Handle-File($file, [string]$path){
     }
     if($ignoreFile){
         Write-Host "Ignoring $path"
+        @($path,"Ignored","")
     } else {
         $floc = Join-Path $destination $path
+        if(Test-Path $floc){
+            @($path,"Exists",$floc)
+            return
+        }
         $dir = Split-Path -Path $floc -Parent
         
         $shellFolder = ""
@@ -63,6 +69,7 @@ Function Handle-File($file, [string]$path){
         $shellFolder.CopyHere($file)
 
         Write-Host "File: $path, copied to $floc"
+        @($path, "Transferred", "$floc")
     }
 }
 

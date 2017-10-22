@@ -19,5 +19,12 @@ namespace PhoneSync
                 }, t.Result);
             });
         }
+
+        public static void Do<T>(this SynchronizationContext sync, T arg, Action<T> handler)
+        {
+            sync.Post(state => {
+                handler((T)state);
+            }, arg);
+        }
     }
 }
