@@ -13,13 +13,9 @@ namespace PhoneSync.Models
     class DeviceExplorer : IDisposable
     {
         public DeviceExplorer(){
-            var appData = System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var settingsFile = System.IO.Path.Combine(appData, "settings.json");
-            Settings = AppSettings.Load(settingsFile);
+            Settings = AppSettings.Load();
         }
-
-
-
+        
         public async Task<List<string>> GetDrives()
         {
             return await new TaskFactory<List<string>>().StartNew(() =>
@@ -49,18 +45,21 @@ namespace PhoneSync.Models
                 Settings.DeviceName = sourceDrive;
             }
 
+            
+
             return await new TaskFactory<List<TransferInfo>>().StartNew(() => {
                 var result = new List<TransferInfo>();
                 var script = GetScript("TransferFiles.ps1");
-                var output = new ObservableCollection<string[]>();
+                //var script = GetScript("Test.ps1");
+                var output = new ObservableCollection<Tuple<string,string,string>>();
                 output.CollectionChanged += (sender, evt) => {
                     foreach(var x in evt.NewItems){
-                        var item = (string[])x;
-                        var status = (TransferStatus)Enum.Parse(typeof(TransferStatus), item[1]);
+                        var item = (Tuple<string, string, string>)x;
+                        var status = (TransferStatus)Enum.Parse(typeof(TransferStatus), item.Item2);
                         var newItem = new TransferInfo(){
-                            SourceFile = item[0],
+                            SourceFile = item.Item1,
                             Status = status,
-                            DestinationFile = item[2]
+                            DestinationFile = item.Item3
                         };
                         result.Add(newItem);
                         FileScaned?.Invoke(newItem);
@@ -68,7 +67,10 @@ namespace PhoneSync.Models
                 };
                 using(PowerShell shell = PowerShell.Create()){
                     shell.AddScript(script);
-                    shell.Invoke(new object[] { sourceDrive, destination, Settings.IgnorePaths.ToArray() }, output);
+                    shell.AddParameter("selectedDrive", sourceDrive);
+                    shell.AddParameter("destination", destination);
+                    shell.AddParameter("ignoreList", Settings.IgnorePaths.ToArray());
+                    shell.Invoke(null, output);
                 }
 
                 return result;

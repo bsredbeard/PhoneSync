@@ -3,21 +3,31 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:PhoneSync"
+        xmlns:local="clr-namespace:PhoneSync.Models"
         xmlns:vm="clr-namespace:PhoneSync.ViewModels"
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
     <Window.Resources>
-        <vm:MainScreenVM x:Key="viewmodel">
-        </vm:MainScreenVM>
+        <vm:MainScreenVM x:Key="viewmodel"/>
+        <vm:TransferStatusToSource x:Key="srcConverter" />
+        <vm:ImageFromEnum x:Key="srcSelector" />
+        <BitmapImage x:Key="IgnoredIcon" UriSource="ignored.png" />
+        <BitmapImage x:Key="ExistsIcon" UriSource="exists.png" />
+        <BitmapImage x:Key="TransferredIcon" UriSource="transferred.png" />
     </Window.Resources>
     <Border Padding="4" DataContext="{StaticResource viewmodel}">
         <StackPanel>
             <DockPanel>
+                <Label x:Name="DestinationLabel" DockPanel.Dock="Left">Destination</Label>
+                <Button DockPanel.Dock="Right" Content="..." MinWidth="50" VerticalAlignment="Center" Command="{Binding SelectDestination}" />
+                <TextBox Text="{Binding Destination}" VerticalAlignment="Center" Margin="0,0,10,0" AutomationProperties.LabeledBy="{Binding ElementName=DestinationLabel, Mode=OneWay}" />
+            </DockPanel>
+
+            <DockPanel>
                 <Label>Detected Drives</Label>
                 <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Padding="15,0" Command="{Binding RefreshDriveList}">Refresh</Button>
             </DockPanel>
-            <ListBox ItemsSource="{Binding Drives}">
+            <ListBox ItemsSource="{Binding Drives}" SelectedItem="{Binding SelectedDrive}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding}" />
@@ -25,13 +35,49 @@
                 </ListBox.ItemTemplate>
             </ListBox>
             <Button Command="{Binding ExploreSelectedDrive}" HorizontalAlignment="Left" MinWidth="200" Margin="0,4">Select Drive</Button>
-            <ListBox ItemsSource="{Binding DriveItems}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock>Hi</TextBlock>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <Border BorderThickness="1,1,0,0" BorderBrush="Black">
+                <ItemsControl x:Name="fileStatus" ItemsSource="{Binding DriveItems}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid HorizontalAlignment="Stretch" Background="Transparent">
+                                <Grid.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderThickness" Value="0,0,1,1" />
+                                        <Setter Property="BorderBrush" Value="Black" />
+                                        <Setter Property="Padding" Value="3" />
+                                    </Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                    </Style>
+                                </Grid.Resources>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition SharedSizeGroup="SourceFile" Width="*" />
+                                    <ColumnDefinition SharedSizeGroup="FileStatus" Width="56" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border>
+                                    <TextBlock Text="{Binding SourceFile}" TextAlignment="Left" />
+                                </Border>
+                                <Border Grid.Column="1">
+                                    <Image Width="50" Height="33">
+                                        <Image.Source>
+                                            <MultiBinding Converter="{StaticResource srcSelector}" Mode="OneWay">
+                                                <Binding Path="Status" />
+                                                <Binding Source="{StaticResource IgnoredIcon}" />
+                                                <Binding Source="{StaticResource TransferredIcon}" />
+                                                <Binding Source="{StaticResource ExistsIcon}" />
+                                            </MultiBinding>
+                                        </Image.Source>
+                                    </Image>
+                                </Border>
+                                <Border Grid.Column="2">
+                                    <TextBlock Text="{Binding DestinationFile}" TextAlignment="Left" />
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
         </StackPanel>
     </Border>
 </Window>

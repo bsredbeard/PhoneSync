@@ -10,7 +10,7 @@ using System.Windows.Input;
 
 namespace PhoneSync.ViewModels
 {
-    public class MainScreenVM : ObservableObject, IDisposable
+    public class MainScreenVM : ViewModelBase, IDisposable
     {
         private readonly SynchronizationContext _syncContext = SynchronizationContext.Current;
         private readonly DeviceExplorer _explorer = new DeviceExplorer();
@@ -19,6 +19,7 @@ namespace PhoneSync.ViewModels
         private readonly ObservableCollection<TransferInfo> _driveItems = new ObservableCollection<TransferInfo>();
         private ICommand _exploreSelectedDrive;
         private ICommand _refreshDriveList;
+        private ICommand _selectDestination;
         private string _selectedDrive = null;
         private bool _isScanning = false;
 
@@ -26,6 +27,7 @@ namespace PhoneSync.ViewModels
         {
             ExploreSelectedDrive = CreateCommand(DoExplore, () => !string.IsNullOrWhiteSpace(SelectedDrive), nameof(SelectedDrive));
             RefreshDriveList = CreateCommand(DoRefresh, () => !IsScanning, nameof(IsScanning));
+            SelectDestination = CreateCommand(DoSelectDestination, () => !IsScanning, nameof(IsScanning));
 
             Drives.Add("Hey");
             Drives.Add("you");
@@ -34,6 +36,11 @@ namespace PhoneSync.ViewModels
             _explorer.FileScaned += (info) => {
                 _syncContext.Do(info, nfo => DriveItems.Add(nfo));
             };
+
+            if (string.IsNullOrWhiteSpace(Destination))
+            {
+                Destination = "C:\\phone-backup";
+            }
         }
 
         /// <summary>
@@ -45,6 +52,16 @@ namespace PhoneSync.ViewModels
         /// The items in the selected drive
         /// </summary>
         public ObservableCollection<TransferInfo> DriveItems { get { return _driveItems; } }
+
+        public string Destination
+        {
+            get { return _explorer.Settings.DestinationPath; }
+            set
+            {
+                _explorer.Settings.DestinationPath = value;
+                RaiseChange(nameof(Destination));
+            }
+        }
 
         /// <summary>
         /// The index of the selected drive
@@ -80,6 +97,16 @@ namespace PhoneSync.ViewModels
             }
         }
 
+        public ICommand SelectDestination
+        {
+            get { return _selectDestination; }
+            set
+            {
+                _selectDestination = value;
+                RaiseChange(nameof(SelectDestination));
+            }
+        }
+
         /// <summary>
         /// A command to refresh the drive list
         /// </summary>
@@ -106,6 +133,20 @@ namespace PhoneSync.ViewModels
             }
         }
 
+        private void DoSelectDestination(object arg)
+        {
+            using (var dialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog())
+            {
+                dialog.IsFolderPicker = true;
+                var result = dialog.ShowDialog();
+
+                if(result == Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
+                {
+                    Destination = dialog.FileName;
+                }
+            }
+        }
+
         private void DoRefresh(object arg)
         {
             IsScanning = true;
@@ -113,6 +154,7 @@ namespace PhoneSync.ViewModels
             {
                 SelectedDrive = null;
                 Drives.Clear();
+                DriveItems.Clear();
                 drives.ForEach(item => Drives.Add(item));
                 IsScanning = false;
             });

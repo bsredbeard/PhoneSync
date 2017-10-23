@@ -48,11 +48,11 @@ Function Handle-File($file, [string]$path){
     }
     if($ignoreFile){
         Write-Host "Ignoring $path"
-        @($path,"Ignored","")
+        [Tuple]::Create($path, "Ignored", "")
     } else {
         $floc = Join-Path $destination $path
         if(Test-Path $floc){
-            @($path,"Exists",$floc)
+            [Tuple]::Create($path,"Exists",$floc)
             return
         }
         $dir = Split-Path -Path $floc -Parent
@@ -69,7 +69,7 @@ Function Handle-File($file, [string]$path){
         $shellFolder.CopyHere($file)
 
         Write-Host "File: $path, copied to $floc"
-        @($path, "Transferred", "$floc")
+        [Tuple]::Create($path, "Transferred", "$floc")
     }
 }
 

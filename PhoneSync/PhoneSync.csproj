@@ -34,6 +34,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.WindowsAPICodePack, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\WindowsAPICodePack-Core.1.1.1\lib\Microsoft.WindowsAPICodePack.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack.Shell, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\WindowsAPICodePack-Shell.1.1.1\lib\Microsoft.WindowsAPICodePack.Shell.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -66,9 +72,10 @@
     <Compile Include="Models\DeviceExplorer.cs" />
     <Compile Include="Models\TransferInfo.cs" />
     <Compile Include="Models\TransferStatus.cs" />
-    <Compile Include="ObservableObject.cs" />
+    <Compile Include="ViewModelBase.cs" />
     <Compile Include="TaskExtensions.cs" />
     <Compile Include="ViewModels\MainScreenVM.cs" />
+    <Compile Include="ViewModels\TransferStatusToSource.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -100,16 +107,26 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <EmbeddedResource Include="Scripts\GetDrives.ps1" />
     <EmbeddedResource Include="Scripts\TransferFiles.ps1" />
+    <EmbeddedResource Include="Scripts\Test.ps1" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="exists.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="ignored.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="transferred.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
